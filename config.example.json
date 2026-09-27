@@ -1,0 +1,134 @@
+// SOS2me configuration — copy to config.json (git-ignored) and fill in.
+//
+// `pnpm dev` applies it to the local database; `pnpm run deploy` applies it to Cloudflare.
+// It is only re-applied when this file changes, so edits made in the dashboard are kept
+// until you change this file again. Anything left out uses the built-in default.
+// Comments and trailing commas are allowed.
+{
+  // ── You ────────────────────────────────────────────────
+  "childName": "Alex", // spoken on calls: "a new message from Alex"
+  "childAge": "11", // helps the AI read the message
+  "adminPassword": "change-me", // dashboard password; hashed on first load
+  "publicBaseUrl": "", // e.g. https://sos2me.example.workers.dev — empty = auto-detect
+
+  // ── Who gets called, in this order ─────────────────────
+  "contacts": [
+    { "name": "Mum", "phone": "+6581234567", "email": "mum@example.com", "enabled": true },
+    { "name": "Dad", "phone": "+6587654321", "email": "", "enabled": true }
+  ],
+
+  // ── What happens for each level ────────────────────────
+  // urgent  = danger / needs a parent now      (keywords, key-mashing, SOS button, AI)
+  // concern = check in soon: sad, bullied, sick (AI only)
+  // normal  = everyday messages
+  "policy": {
+    "urgent": {
+      "call": true,
+      "sms": true,
+      "email": true,
+      "rounds": 5,
+      "retryMinutes": 2,
+      "requireConfirm": true
+    },
+    "concern": {
+      "call": true,
+      "sms": true,
+      "email": true,
+      "rounds": 2,
+      "retryMinutes": 10,
+      "requireConfirm": false
+    },
+    "normal": {
+      "call": true,
+      "sms": false,
+      "email": false,
+      "rounds": 1,
+      "retryMinutes": 2,
+      "requireConfirm": false
+    }
+  },
+
+  "rules": {
+    // Leave out "urgentKeywords" to use the built-in list (~200 English / Chinese / Malay phrases).
+    // "urgentKeywords": ["help", "sos", "our family code word"],
+    "gibberishIsUrgent": true, // "asdkjhqwe", "!!!???" → urgent
+    "aiCanSoften": true // "lol help me with maths" → concern instead of urgent (never lower)
+  },
+
+  // ── AI helper: tried top to bottom, first answer wins ──
+  "ai": {
+    "enabled": true,
+    "timeoutSeconds": 12,
+    "models": [
+      { "provider": "workers-ai", "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast", "enabled": true },
+      { "provider": "workers-ai", "model": "@cf/aisingapore/gemma-sea-lion-v4-27b-it", "enabled": true },
+      { "provider": "openrouter", "model": "openrouter/free", "enabled": true }
+    ]
+  },
+
+  "voice": {
+    "language": "en-US", // en-GB, cmn-CN, yue-HK, ms-MY …
+    "voice": "", // e.g. Polly.Joanna-Neural; empty = Twilio default
+    "readMessage": true, // read the child's words aloud
+    "readAiSummary": true // "Assistant's note: Alex sounds scared…"
+  },
+
+  // ── Credentials (stay in config.json / the database, never in git) ──
+  "twilio": {
+    "accountSid": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "authToken": "", // LIVE Auth Token (not Test) — also verifies Twilio callbacks
+    "apiKeySid": "", // optional Standard API key (SK…) for REST calls
+    "apiKeySecret": "", // optional
+    "fromNumber": "+15550001111"
+  },
+  "services": {
+    "agentmailApiKey": "", // https://agentmail.to
+    "agentmailFrom": "your-inbox@agentmail.to", // sends alert + daily-check emails
+    "openrouterApiKey": "", // https://openrouter.ai/keys
+    "openaiBaseUrl": "", // any OpenAI-compatible API (optional)
+    "openaiApiKey": "",
+    "openaiModel": "", // default model id for OpenAI-compatible entries
+    "cloudflareAccountId": "", // only for Workers AI in local dev
+    "cloudflareApiToken": ""
+  },
+
+  // ── How your child can reach you ───────────────────────
+  "channels": {
+    "kidPage": {
+      "enabled": true,
+      "homeAtRoot": false, // true = kid page at https://your-domain/ (PIN required); dashboard at /admin
+      "pin": "2468", // asked once per device; hashed on first load; "" = no PIN
+      "quickReplies": ["I'm OK", "Please call me", "Pick me up", "I'll be late", "I'm home"]
+    },
+    // Email channels only accept these senders (address or @domain).
+    "allowedSenders": ["kid@gmail.com", "@school.edu.sg"],
+    // Also read email from anyone else that clearly mentions these names (e.g. a teacher).
+    // Only urgent / check-in results notify you; everyday mail is recorded only. [] = child's name.
+    "acceptMentions": true,
+    "watchNames": ["Alex", "小明"],
+    // Cloudflare Email Routing → this Worker (needs your own domain on Cloudflare).
+    "emailRouting": { "enabled": false, "forwardTo": "" },
+    // Mailboxes checked every minute. Add as many as you like.
+    "mailboxes": [
+      { "name": "Kid inbox", "type": "agentmail", "address": "your-inbox@agentmail.to", "enabled": true }
+      // Gmail: turn on 2-step verification, create an App Password, IMAP must be enabled.
+      // { "name": "Gmail", "type": "imap", "host": "imap.gmail.com", "port": 993,
+      //   "address": "kid@gmail.com", "password": "app-password", "folder": "INBOX", "enabled": true },
+    ],
+    // ntfy topics checked every minute. Use long random topic names; "token" is an access token (tk_…) or "user:password".
+    "ntfy": [
+      // { "name": "Family", "baseUrl": "https://ntfy.sh", "topic": "sos2me-7f3k2q9x", "token": "", "enabled": true },
+      // { "name": "Own server", "baseUrl": "https://ntfy.example.com", "topic": "sos", "username": "kid", "token": "password", "enabled": true },
+    ]
+  },
+
+  // ── Daily system check (emails you if anything is broken) ──
+  "health": {
+    "enabled": true,
+    "time": "09:00",
+    "timezone": "Asia/Singapore",
+    "extraEmails": [], // contacts with an email always get it
+    "emailWhenOk": false,
+    "smsOnFailure": true
+  }
+}

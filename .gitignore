@@ -1,0 +1,46 @@
+# ── Secrets ─────────────────────────────────────────────
+# Real credentials live only in these files (or in `wrangler secret put`).
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Your real settings + credentials (copy from config.example.json)
+config.json
+config.legacy.json
+# Your real Cloudflare database id / domain (copy of wrangler.jsonc)
+wrangler.local.jsonc
+
+# ── Dependencies & build output ────────────────────────
+node_modules/
+dist/
+.wrangler/
+.vite/
+*.tsbuildinfo
+coverage/
+
+# ── Logs ───────────────────────────────────────────────
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# ── Legacy Python leftovers ────────────────────────────
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+data/
+
+# ── Editor / OS ────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+*.swp
+*~
+
+# ── Local agent tooling ────────────────────────────────
+.agents/
+.impeccable/

@@ -1,0 +1,54 @@
+{
+  "name": "sos2me",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Turns a child's messages into phone calls to their parents. Runs on Cloudflare Workers.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/config.mjs dev",
+    "build": "vp build",
+    "preview": "vp build && wrangler dev",
+    "check": "vp check",
+    "test": "vp test",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.worker.json",
+    "db:migrate:remote": "wrangler d1 migrations apply sos2me --remote --config wrangler.local.jsonc",
+    "deploy": "node scripts/config.mjs deploy",
+    "cf-typegen": "wrangler types worker/worker-configuration.d.ts",
+    "config:local": "node scripts/config.mjs local --force",
+    "config:remote": "node scripts/config.mjs remote",
+    "config:pull": "node scripts/config.mjs pull",
+    "config:pull:remote": "node scripts/config.mjs pull --remote"
+  },
+  "dependencies": {
+    "hono": "^4.13.9",
+    "postal-mime": "^4.0.0",
+    "vue": "^3.5.43",
+    "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.60.2",
+    "@cloudflare/workers-types": "^5.20260927.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "jsonc-parser": "^3.3.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.9.3",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.0.0-rc.1",
+    "vite-plus": "1.0.0-rc.1",
+    "vue-tsc": "^3.3.11",
+    "wrangler": "^4.141.0"
+  },
+  "packageManager": "pnpm@10.15.0",
+  "pnpm": {
+    "overrides": {
+      "vite": "npm:@voidzero-dev/vite-plus-core@1.0.0-rc.1",
+      "vitest": "5.0.1"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "workerd"
+    ]
+  }
+}

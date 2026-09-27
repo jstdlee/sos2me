@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+
+/* Calm palette: warm paper background, deep ink, sage for "all good", soft clay for urgent. */
+/* Calm pastel palette: cream paper, sage for "all good", soft sky for the kid page,
+   lavender for "check in", and a muted rose (never orange) for urgent. */
+@theme {
+  --font-sans:
+    'Nunito', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  --color-paper: #fbf7f3;
+  --color-surface: #ffffff;
+  --color-line: #ece4dc;
+  --color-ink: #2d3336;
+  --color-muted: #5f6a6d;
+  --color-faint: #8d9699;
+  --color-outline: #7a6f6b; /* bunny outlines */
+
+  --color-sage-50: #eef6f2;
+  --color-sage-100: #dcece5;
+  --color-sage-500: #5a9887;
+  --color-sage-600: #478474;
+  --color-sage-700: #356a5d;
+
+  --color-sky-50: #eef5fb;
+  --color-sky-100: #dbe9f6;
+  --color-sky-200: #c3daf0;
+  --color-sky-500: #6d9cc9;
+  --color-sky-600: #5586b5;
+  --color-sky-700: #416d98;
+
+  --color-blush-50: #fdf2f5;
+  --color-blush-100: #f9e1e8;
+  --color-blush-200: #f3c9d6;
+
+  --color-lav-50: #f5f2fb;
+  --color-lav-100: #e7e1f5;
+  --color-lav-500: #8b79c3;
+  --color-lav-600: #7060a9;
+
+  --color-rose-50: #fcf1f3;
+  --color-rose-100: #f6dbe2;
+  --color-rose-500: #c0566f;
+  --color-rose-600: #a6435b;
+
+  --radius-card: 1.5rem;
+}
+
+@layer base {
+  html {
+    font-size: 17px;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply text-ink antialiased;
+    font-family: var(--font-sans);
+    background-color: var(--color-paper);
+    /* Soft pom-pom dots and pastel glows — decoration only, low contrast behind the cards. */
+    background-image:
+      url('/decor/pompoms.svg'),
+      radial-gradient(60rem 40rem at 110% -10%, var(--color-blush-100), transparent 60%),
+      radial-gradient(50rem 36rem at -20% 110%, var(--color-sky-100), transparent 60%),
+      radial-gradient(40rem 30rem at 50% 50%, var(--color-sage-50), transparent 70%);
+    background-size:
+      520px 520px,
+      auto,
+      auto,
+      auto;
+    background-attachment: fixed;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-sage-600;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
+
+/* Small design-system utilities (Tailwind v4 @utility so they compose with variants). */
+@utility card {
+  @apply rounded-[var(--radius-card)] border border-line/80 bg-surface/95 p-5 shadow-[0_1px_0_rgba(0,0,0,0.02),0_8px_24px_-12px_rgba(122,111,107,0.18)] sm:p-6;
+}
+@utility btn {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-sage-600 text-white hover:bg-sage-700;
+}
+@utility btn-quiet {
+  @apply btn border border-line bg-surface text-ink hover:bg-paper;
+}
+@utility btn-danger {
+  @apply btn bg-rose-500 text-white hover:bg-rose-600;
+}
+@utility field {
+  @apply block w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-ink placeholder:text-faint focus:border-sage-500 focus:ring-2 focus:ring-sage-100 focus:outline-none;
+}
+@utility label {
+  @apply mb-1.5 block text-sm font-medium text-ink;
+}
+@utility hint {
+  @apply mt-1.5 text-sm text-muted;
+}
+@utility section-title {
+  @apply text-lg font-semibold tracking-tight;
+}

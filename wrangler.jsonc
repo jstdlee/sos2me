@@ -1,0 +1,53 @@
+// Template. Copy to wrangler.local.jsonc (git-ignored) for your real database id / domain —
+// the build and deploy scripts use wrangler.local.jsonc when it exists.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sos2me", // → https://sos2me.<your-subdomain>.workers.dev (kid page at /, dashboard at /admin)
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  // Vue SPA is served as static assets; API + Twilio webhooks run in the Worker.
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/twilio/*"],
+  },
+
+  // Messages, settings and the activity log.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sos2me",
+      // Replace with the id printed by `wrangler d1 create sos2me` (see docs/deploy-cloudflare.md).
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations",
+    },
+  ],
+
+  // One Durable Object per alert drives the "call until someone confirms" loop.
+  "durable_objects": {
+    "bindings": [{ "name": "ESCALATION", "class_name": "Escalation" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Escalation"] }],
+
+  // Optional: free-tier AI classification (Settings → Rules → AI).
+  "ai": { "binding": "AI" },
+
+  // Polls the optional ntfy topic once a minute.
+  "triggers": { "crons": ["* * * * *"] },
+
+  "vars": {
+    // Public https URL of this Worker, used for Twilio callbacks.
+    // Leave empty to auto-detect from the first admin visit.
+    "PUBLIC_BASE_URL": "",
+  },
+
+  // Optional: your own hostname, e.g. kid page at https://sos.example.com/ and dashboard at /admin.
+  // The zone must be on the same Cloudflare account. Uncomment and edit (or put it in wrangler.local.jsonc):
+  // "routes": [{ "pattern": "sos.example.com/*", "zone_name": "example.com" }],
+
+  // Keep the free https://<name>.<subdomain>.workers.dev address alongside any custom route.
+  "workers_dev": true,
+
+  "observability": { "enabled": true },
+}

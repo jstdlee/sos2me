@@ -1,0 +1,9 @@
+{
+  "name": "SOS2me",
+  "short_name": "SOS2me",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f4ef",
+  "theme_color": "#f6f4ef",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
