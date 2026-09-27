@@ -18,6 +18,38 @@ It runs on Cloudflare's free tier. The only paid part is Twilio, which charges a
                               daily system check ─► email / SMS parents if anything is broken
 ```
 
+## Gallery
+
+<table>
+  <tr>
+    <td width="33%" align="center"><img src="docs/screenshots/kid-page.webp" alt="Kid page: quick replies and a text box" width="260"><br><sub><b>Kid page</b>: one tap to message home</sub></td>
+    <td width="33%" align="center"><img src="docs/screenshots/kid-pin.webp" alt="Kid page PIN pad" width="260"><br><sub><b>PIN</b>: asked once per phone</sub></td>
+    <td width="33%" align="center"><img src="docs/screenshots/phone-dashboard.webp" alt="Parent dashboard on a phone" width="260"><br><sub><b>Dashboard on a phone</b></sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/screenshots/dashboard.webp" alt="Parent dashboard: status, recent messages with AI notes, system check and how to answer a call" width="820"><br>
+  <sub><b>Parent dashboard</b>: last message, AI notes, the daily system check, and what to do when SOS2me calls</sub>
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/message-timeline.webp" alt="Urgent message timeline: SMS, email, declined call, redial, confirmed"><br><sub><b>What happened</b>: an urgent message, a declined call redialled, then Mum pressed 1</sub></td>
+    <td width="50%"><img src="docs/screenshots/settings-alerts.webp" alt="Calls and alerts settings per level"><br><sub><b>Calls & alerts</b>: rounds, retries and redial for each level</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/settings-ai.webp" alt="AI model chain settings"><br><sub><b>AI</b>: Cloudflare models first, free fallbacks after</sub></td>
+    <td width="50%"><img src="docs/screenshots/settings-channels.webp" alt="Kid channels: kid page, PIN, mailboxes, ntfy"><br><sub><b>Kid channels</b>: kid page, mailboxes, ntfy, watched names</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/settings-connections.webp" alt="Connections: Twilio, public address, AgentMail"><br><sub><b>Connections</b>: keys are write-only</sub></td>
+    <td width="50%"><img src="docs/screenshots/login.webp" alt="Parent login"><br><sub><b>Parent login</b></sub></td>
+  </tr>
+</table>
+
+<sub>Screenshots use a demo family (Alex, Mum and Dad) with made-up numbers.</sub>
+
 ## Features
 
 **Ways your child can reach you**

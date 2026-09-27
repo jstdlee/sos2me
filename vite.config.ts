@@ -16,6 +16,8 @@ export default defineConfig({
             // Your real database id / domain live in the git-ignored wrangler.local.jsonc.
             configPath: existsSync('wrangler.local.jsonc') ? 'wrangler.local.jsonc' : 'wrangler.jsonc',
             remoteBindings: process.env.CF_REMOTE === '1',
+            // SOS2ME_DEMO=1 keeps a separate local database (used for the README screenshots).
+            persistState: process.env.SOS2ME_DEMO === '1' ? { path: '.wrangler/demo' } : true,
           }),
         ]),
   ],

@@ -541,7 +541,7 @@ const policyDesc: Record<Level, string> = {
                 <span class="text-sm font-semibold text-muted sm:w-20">{{
                   i === 0 ? 'Main' : `Backup ${i}`
                 }}</span>
-                <select v-model="m.provider" class="field sm:w-52">
+                <select v-model="m.provider" class="field sm:w-64">
                   <option v-for="(l, p) in providerLabel" :key="p" :value="p">{{ l }}</option>
                 </select>
                 <input
