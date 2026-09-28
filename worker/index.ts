@@ -14,6 +14,7 @@ import {
   tooManyAttempts,
 } from './auth';
 import { classify } from './classify';
+import { buildSituation } from './situation';
 import {
   finalizeConfig,
   getMessage,
@@ -36,7 +37,8 @@ import { handleEmail } from './email';
 import type { Env } from './env';
 import { lastHealth, maybeRunDailyCheck, runHealthCheck } from './health';
 import { mailFrom, parentEmails, sendParentsMail } from './mailer';
-import { checkPublicAddress, handleIncoming, instanceId, publicBaseUrl } from './pipeline';
+import { addDetails, checkPublicAddress, handleIncoming, instanceId, publicBaseUrl } from './pipeline';
+import { cleanDevice, cleanGps, connectionContext } from './context';
 import { emailDecision } from './senders';
 import { pollAllSources } from './sources';
 import { voiceTwiml } from './voice';
@@ -126,7 +128,11 @@ async function kidUnlocked(c: Context<App>, kp: Config['channels']['kidPage'], k
 app.get('/api/kid/:token', async (c) => {
   const k = await kidContext(c);
   if (!k) return c.json({ error: 'This link is not active.' }, 404);
-  return c.json({ pinRequired: !!k.kp.pin, quickReplies: k.kp.quickReplies });
+  return c.json({
+    pinRequired: !!k.kp.pin,
+    quickReplies: k.kp.quickReplies,
+    shareLocation: k.kp.shareLocation,
+  });
 });
 
 app.post('/api/kid/:token/unlock', async (c) => {
@@ -145,19 +151,48 @@ app.post('/api/kid/:token/unlock', async (c) => {
 app.post('/api/kid/:token/send', async (c) => {
   const k = await kidContext(c);
   if (!k) return c.json({ error: 'This link is not active.' }, 404);
-  const { text, sos, key, pin } = await c.req
-    .json<{ text?: string; sos?: boolean; key?: string; pin?: string }>()
+  const { text, sos, key, pin, gps, device } = await c.req
+    .json<{ text?: string; sos?: boolean; key?: string; pin?: string; gps?: unknown; device?: unknown }>()
     .catch(() => ({}) as never);
   if (!(await kidUnlocked(c, k.kp, key, pin))) return c.json({ error: 'locked' }, 401);
   const body = (text ?? '').trim().slice(0, 1000) || (sos ? 'SOS' : '');
   if (!body) return c.json({ error: 'Type a message first.' }, 400);
-  const res = await handleIncoming(c.env, {
-    source: 'kid-page',
-    sender: 'Kid page',
-    body,
-    forceUrgent: !!sos,
-  });
+  const res = await handleIncoming(
+    c.env,
+    {
+      source: 'kid-page',
+      sender: 'Kid page',
+      body,
+      forceUrgent: !!sos,
+      context: k.kp.shareLocation
+        ? { ...connectionContext(c.req.raw), gps: cleanGps(gps), device: cleanDevice(device) }
+        : undefined,
+    },
+    (p) => c.executionCtx.waitUntil(p),
+  );
   return c.json({ ok: true, id: res?.id, status: res?.status });
+});
+
+/** After sending: the child adds what they see / hear, or their location once the GPS answers. */
+app.post('/api/kid/:token/details', async (c) => {
+  const k = await kidContext(c);
+  if (!k) return c.json({ error: 'This link is not active.' }, 404);
+  const { id, key, text, gps } = await c.req
+    .json<{ id?: string; key?: string; text?: string; gps?: unknown }>()
+    .catch(() => ({}) as never);
+  if (!(await kidUnlocked(c, k.kp, key))) return c.json({ error: 'locked' }, 401);
+  const m = id ? await getMessage(c.env, id) : null;
+  if (!m || m.source !== 'kid-page') return c.json({ error: 'not found' }, 404);
+  if (Date.now() - new Date(m.received_at).getTime() > 24 * 3600_000)
+    return c.json({ error: 'This message is too old. Send a new one.' }, 400);
+  const clean = {
+    text: String(text ?? '').trim() || undefined,
+    gps: k.kp.shareLocation ? cleanGps(gps) : undefined,
+  };
+  if (!clean.text && !clean.gps) return c.json({ error: 'Type something first.' }, 400);
+  const res = await addDetails(c.env, m.id, clean, (p) => c.executionCtx.waitUntil(p));
+  if (!res.ok) return c.json({ error: res.error }, 400);
+  return c.json({ ok: true, newId: res.newId });
 });
 
 /** Lets the kid page show "Mum heard your message ✓". */
@@ -261,7 +296,27 @@ api.post('/test/classify', async (c) => {
   );
   if (aboutFrom && result.level === 'normal')
     result.reason += ' — everyday email from another sender: recorded only';
-  return c.json({ ...result, aiErrors, policy: cfg.policy[result.level] });
+  // The prediction this message would get, together with the real recent messages and routine.
+  const prediction = await buildSituation(
+    c.env,
+    cfg,
+    {
+      received_at: new Date().toISOString(),
+      level: result.level,
+      source: 'test',
+      subject: '',
+      body: text ?? '',
+      context: null,
+    },
+    (m, e) => aiErrors.push(`prediction, ${m}: ${String(e)}`),
+  ).catch(() => null);
+  return c.json({
+    ...result,
+    aiErrors,
+    policy: cfg.policy[result.level],
+    prediction: prediction?.situation ?? null,
+    routine: prediction?.event.routine ?? [],
+  });
 });
 
 /** Place one real call to one contact to check Twilio and the voice message. */

@@ -6,7 +6,9 @@ import {
   type AlertStatus,
   type Config,
   type EventRow,
+  type MessageContext,
   type MessageRow,
+  type Situation,
 } from '../shared/types';
 import type { Env } from './env';
 import { timingSafeEqual } from './twilio';
@@ -105,6 +107,8 @@ export function normalizeConfig(input: unknown): Config {
   }
   cfg.rules.urgentKeywords = list(cfg.rules.urgentKeywords);
   cfg.ai.timeoutSeconds = clamp(cfg.ai.timeoutSeconds, 3, 30);
+  cfg.situation.windowHours = clamp(cfg.situation.windowHours, 1, 72);
+  cfg.situation.maxMessages = clamp(cfg.situation.maxMessages, 1, 20);
   cfg.ai.models = cfg.ai.models
     .map((m) => ({
       id: id(m),
@@ -250,11 +254,15 @@ export async function finalizeConfig(cfg: Config): Promise<Config> {
 
 export async function insertMessage(
   env: Env,
-  m: Omit<MessageRow, 'updated_at' | 'acknowledged_by' | 'insight'> & { insight?: string },
+  m: Omit<MessageRow, 'updated_at' | 'acknowledged_by' | 'insight' | 'context' | 'situation'> & {
+    insight?: string;
+    context?: string;
+    situation?: string;
+  },
 ): Promise<boolean> {
   const res = await env.DB.prepare(
-    `INSERT OR IGNORE INTO messages (id, source, sender, subject, body, received_at, level, reason, insight, status, updated_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?6)`,
+    `INSERT OR IGNORE INTO messages (id, source, sender, subject, body, received_at, level, reason, insight, status, context, situation, updated_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?6)`,
   )
     .bind(
       m.id,
@@ -267,9 +275,48 @@ export async function insertMessage(
       m.reason,
       m.insight ?? '',
       m.status,
+      m.context ?? '',
+      m.situation ?? '',
     )
     .run();
   return (res.meta.changes ?? 0) > 0;
+}
+
+export async function setMessageContext(env: Env, id: string, context: MessageContext): Promise<void> {
+  await env.DB.prepare('UPDATE messages SET context = ?2, updated_at = ?3 WHERE id = ?1')
+    .bind(id, JSON.stringify(context), nowIso())
+    .run();
+}
+
+export async function setMessageSituation(env: Env, id: string, situation: Situation): Promise<void> {
+  await env.DB.prepare('UPDATE messages SET situation = ?2, updated_at = ?3 WHERE id = ?1')
+    .bind(id, JSON.stringify(situation), nowIso())
+    .run();
+}
+
+/** The child's messages between two times, oldest first (tests excluded). For the usual routine. */
+export async function olderMessages(
+  env: Env,
+  sinceIso: string,
+  beforeIso: string,
+  limit: number,
+): Promise<MessageRow[]> {
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM messages WHERE received_at >= ? AND received_at < ? AND source != 'test' ORDER BY received_at DESC LIMIT ?`,
+  )
+    .bind(sinceIso, beforeIso, limit)
+    .all<MessageRow>();
+  return results.reverse();
+}
+
+/** The child's messages since `sinceIso`, oldest first (tests excluded). */
+export async function recentMessages(env: Env, sinceIso: string, limit: number): Promise<MessageRow[]> {
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM messages WHERE received_at >= ? AND source != 'test' ORDER BY received_at DESC LIMIT ?`,
+  )
+    .bind(sinceIso, limit)
+    .all<MessageRow>();
+  return results.reverse();
 }
 
 export async function messageExists(env: Env, id: string): Promise<boolean> {

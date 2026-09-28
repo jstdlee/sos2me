@@ -2,6 +2,11 @@
 
 **Your child's messages, as a phone call.**
 
+<p align="center">
+  <a href="docs/media/sos2me-intro.mp4"><img src="docs/media/intro-poster.webp" alt="Watch the 45-second SOS2me introduction" width="720"></a><br>
+  <sub><b>45-second introduction</b> (with sound): why SOS2me exists, a typical emergency, and how a message becomes a call</sub>
+</p>
+
 Kids often have a phone that can send messages but can't always call, or can't talk. SOS2me
 turns their message into a **phone call to a parent that reads the message aloud**. For
 anything urgent, it keeps calling Mum, then Dad, then Mum again, until someone **presses 1**.
@@ -59,6 +64,11 @@ It runs on Cloudflare's free tier. The only paid part is Twilio, which charges a
   - One-tap replies (e.g. "SOS", "Pick me up") and free text. The dashboard lives at `/admin`.
   - Shows "Mum heard you ✓" once a parent confirms.
   - Can be triggered from an iPhone Shortcut, Siri or Back Tap ([docs/ios.md](docs/ios.md)).
+  - Sends where the child is with every message: GPS (if they allow it) with the street and nearby
+    landmarks from OpenStreetMap, plus IP address, hostname, internet provider, Wi-Fi or mobile data, and
+    battery. Web pages can't read the Wi-Fi name or the phone's name.
+  - After sending, "Help them find you" tips let the child add what they see, hear, the room, or who is
+    with them. These are added to the same alert (no extra calls). A detail with urgent words starts a new alert.
 - **Mailboxes, checked every minute:** as many as you like. AgentMail inboxes, plus Gmail, Outlook
   or iCloud over IMAP with an app password. Mail from senders not on the allowed list is ignored.
 - **Emails that mention your child:** mail from anyone else, such as a teacher or another parent, is read by the
@@ -77,6 +87,14 @@ It runs on Cloudflare's free tier. The only paid part is Twilio, which charges a
   - It adds a one-line note for you, e.g. "Alex feels threatened by a follower".
   - Models are tried in order: Cloudflare Llama 3.3 70B, then SEA-LION (Singlish and Chinese), then free OpenRouter models.
   - In testing, the prompt classified all 16 test messages correctly on both Cloudflare models ([docs/review.md](docs/review.md)).
+- **What's happening (prediction):** after each message the AI predicts the most likely scenario from
+  everything received about the event: recent messages, local time, where the phone is, nearby places,
+  battery, network and details the child added. It's two short lines of text (no images): what is most
+  likely happening now, and what most likely comes next. The call reads it out with the child's location,
+  alert emails include it, and it's emailed to you after every message (you can turn this off).
+- **Reply to urgent emails:** when the child's email is urgent or a check-in, SOS2me replies straight
+  away with the subject "Delete me after reading". The reply starts with a safety reminder (call 999 / 995),
+  then asks where they are, what they can see and hear, and who is with them.
 - **Voicemail can't stop an alarm:** urgent calls only stop when someone presses 1.
 - **Declined call:** SOS2me rings the same person again immediately (on iPhone, a second call within
   3 minutes rings through Do Not Disturb). **No answer:** it moves to the next emergency contact.

@@ -33,5 +33,6 @@ export async function handleEmail(message: ForwardableEmailMessage, env: Env): P
     body,
     externalId: parsed.messageId || message.headers.get('message-id') || undefined,
     mentions: decision.kind === 'mentions' ? decision.name : undefined,
+    replyTo: { address: from },
   });
 }

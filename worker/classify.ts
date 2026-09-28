@@ -87,7 +87,7 @@ How to judge:
 Reply with JSON only, no other text:
 {"level":"urgent|concern|normal","emotion":"one or two words, e.g. calm, happy, excited, worried, sad, scared, hurt, angry, panicked","risks":["short tags such as injury, medical, lost, stranger, threat, bullying, self-harm, abuse, online-grooming; empty if none"],"summary":"one calm sentence for the parent (max 25 words) saying what the child seems to feel and need","confidence":0.0}`;
 
-type ChatMessage = { role: 'system' | 'user'; content: string };
+export type ChatMessage = { role: 'system' | 'user'; content: string };
 
 function extractContent(out: unknown): string {
   const o = out as { response?: unknown; choices?: { message?: { content?: unknown } }[]; result?: unknown };
@@ -122,7 +122,7 @@ async function chatOpenAiStyle(
   return extractContent(data);
 }
 
-async function chat(env: Env, cfg: Config, m: AiModel, messages: ChatMessage[]): Promise<string> {
+export async function chat(env: Env, cfg: Config, m: AiModel, messages: ChatMessage[]): Promise<string> {
   const timeoutMs = cfg.ai.timeoutSeconds * 1000;
   const s = cfg.services;
   switch (m.provider) {

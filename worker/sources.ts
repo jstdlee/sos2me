@@ -51,6 +51,7 @@ async function pollAgentMail(env: Env, cfg: Config, box: Mailbox): Promise<void>
       body: body.slice(0, 4000),
       externalId: `agentmail:${it.message_id}`,
       mentions: decision.kind === 'mentions' ? decision.name : undefined,
+      replyTo: { address: from, inbox: { key, address: box.address } },
     });
   }
   // `after` is inclusive on some servers; duplicates are ignored by message id anyway.
@@ -81,6 +82,7 @@ async function pollImapBox(env: Env, cfg: Config, box: Mailbox): Promise<void> {
       body,
       externalId: parsed.messageId || `imap:${box.id}:${res.uidValidity}:${mail.uid}`,
       mentions: decision.kind === 'mentions' ? decision.name : undefined,
+      replyTo: { address: from },
     });
   }
   await putSetting(

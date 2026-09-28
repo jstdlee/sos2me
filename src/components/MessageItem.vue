@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { MessageRow } from '../../shared/types';
+import { computed } from 'vue';
+import { parseJson, type MessageRow, type Situation } from '../../shared/types';
 import { levelDot, levelText, sourceText, timeAgo } from '../format';
 import Icon from './Icon.vue';
 import StatusPill from './StatusPill.vue';
 
-defineProps<{ m: MessageRow }>();
+const props = defineProps<{ m: MessageRow }>();
+const prediction = computed(() => parseJson<Situation>(props.m.situation)?.now ?? '');
 </script>
 
 <template>
@@ -21,7 +23,9 @@ defineProps<{ m: MessageRow }>();
       <p class="line-clamp-2 text-[1.02rem] leading-snug">
         <span v-if="m.subject" class="font-medium">{{ m.subject }} · </span>{{ m.body || '(empty)' }}
       </p>
-      <p v-if="m.insight" class="mt-1 line-clamp-1 text-sm text-muted italic">{{ m.insight }}</p>
+      <p v-if="prediction || m.insight" class="mt-1 line-clamp-1 text-sm text-muted italic">
+        {{ prediction || m.insight }}
+      </p>
       <p class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
         <span>{{ timeAgo(m.received_at) }}</span>
         <span aria-hidden="true">·</span>

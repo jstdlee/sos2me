@@ -1,4 +1,11 @@
-import type { Config, MessageRow } from '../shared/types';
+import {
+  parseJson,
+  type Config,
+  type MessageContext,
+  type MessageRow,
+  type Situation,
+} from '../shared/types';
+import { spokenSituation } from './situation';
 import { gather, say } from './twilio';
 
 const INTRO = {
@@ -27,7 +34,13 @@ export function voiceTwiml(
   const content = v.readMessage
     ? ` The message says: ${[msg.subject, msg.body].filter(Boolean).join('. ').slice(0, 600)}.`
     : ' Please check your messages.';
-  const note = v.readAiSummary && msg.insight ? ` Assistant's note: ${msg.insight}` : '';
+  // The prediction (from all recent messages) replaces the per-message note, to keep the call short.
+  const prediction = v.readSituation ? spokenSituation(parseJson<Situation>(msg.situation)) : '';
+  const ctx = v.readSituation ? parseJson<MessageContext>(msg.context) : null;
+  const where = ctx?.place ? ` ${cfg.childName}'s phone is near ${ctx.place}.` : '';
+  const note = prediction
+    ? prediction + where
+    : (v.readAiSummary && msg.insight ? ` Assistant's note: ${msg.insight}` : '') + where;
   if (!baseUrl || !canConfirm) {
     // Keypad replies can't reach us: read it twice; staying on the line counts as confirmation.
     const once = intro + content + note;

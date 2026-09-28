@@ -128,6 +128,19 @@ export interface Config {
     readMessage: boolean;
     /** Also read the AI's one-line note ("Alex sounds scared…"). */
     readAiSummary: boolean;
+    /** Read the AI prediction of what is happening (from recent messages) and where the child is. */
+    readSituation: boolean;
+  };
+
+  /** AI prediction of what is happening, built from the child's recent messages. */
+  situation: {
+    enabled: boolean;
+    /** How far back to look. */
+    windowHours: number;
+    /** At most this many recent messages. */
+    maxMessages: number;
+    /** Email the prediction to parents after each message, even for levels without alert emails. */
+    email: boolean;
   };
 
   twilio: {
@@ -160,7 +173,15 @@ export interface Config {
       token: string;
       pin: string;
       quickReplies: string[];
+      /** Send GPS (if the child allows it), battery and network type with each message. */
+      shareLocation: boolean;
     };
+    /**
+     * Reply straight away to urgent / check-in emails from the child, asking where they are and
+     * what they can see and hear. Subject "Delete me after reading", safety reminder first.
+     */
+    askForDetails: boolean;
+
     /** Senders accepted by every email channel (addresses or @domains). */
     allowedSenders: string[];
     /**
@@ -422,7 +443,8 @@ export const DEFAULT_CONFIG: Config = {
       { id: 'or-free', provider: 'openrouter', model: 'openrouter/free', enabled: true },
     ],
   },
-  voice: { language: 'en-US', voice: '', readMessage: true, readAiSummary: true },
+  voice: { language: 'en-US', voice: '', readMessage: true, readAiSummary: true, readSituation: true },
+  situation: { enabled: true, windowHours: 6, maxMessages: 8, email: true },
   twilio: { accountSid: '', authToken: '', apiKeySid: '', apiKeySecret: '', fromNumber: '' },
   services: {
     agentmailApiKey: '',
@@ -441,7 +463,9 @@ export const DEFAULT_CONFIG: Config = {
       token: '',
       pin: '',
       quickReplies: ["I'm OK", 'Please call me', 'Pick me up', "I'll be late", "I'm home"],
+      shareLocation: true,
     },
+    askForDetails: true,
     allowedSenders: [],
     acceptMentions: true,
     watchNames: [],
@@ -494,6 +518,60 @@ export interface MessageRow {
   status: AlertStatus;
   acknowledged_by: string | null;
   updated_at: string;
+  /** JSON MessageContext, or '' */
+  context: string;
+  /** JSON Situation, or '' */
+  situation: string;
+}
+
+/** Where the child was when sending, and anything they added afterwards. All fields optional. */
+export interface MessageContext {
+  /** From the phone's GPS, if the child allowed it. */
+  gps?: { lat: number; lon: number; accuracy: number; at: string };
+  /** Street address near the GPS fix (OpenStreetMap). */
+  place?: string;
+  /** Named places within ~200 m: parks, shops, stations, buildings. */
+  nearby?: string[];
+  /** From the connection, as seen by Cloudflare. City-level at best. */
+  ip?: string;
+  hostname?: string;
+  isp?: string;
+  ipLocation?: { city?: string; region?: string; country?: string; lat?: number; lon?: number };
+  /** Reported by the kid page's browser. Web pages can't read the Wi-Fi name or device name. */
+  device?: {
+    network?: string;
+    effectiveType?: string;
+    battery?: number;
+    charging?: boolean;
+    timezone?: string;
+    language?: string;
+    platform?: string;
+    userAgent?: string;
+  };
+  /** Extra details the child added after sending ("I can see a 7-Eleven"). */
+  details?: { at: string; text: string }[];
+}
+
+/** The AI's short prediction of what is most likely happening, from the recent messages. */
+export interface Situation {
+  /** What is most likely happening right now. */
+  now: string;
+  /** The most likely explanation / what happens next / what the child needs. */
+  likely: string;
+  confidence: 'low' | 'medium' | 'high';
+  model: string;
+  at: string;
+  /** Number of messages it was based on. */
+  basedOn: number;
+}
+
+export function parseJson<T>(raw: string | null | undefined): T | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
 }
 
 export interface EventRow {

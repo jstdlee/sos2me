@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
-import type { EventRow, MessageRow } from '../../shared/types';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import {
+  parseJson,
+  type EventRow,
+  type MessageContext,
+  type MessageRow,
+  type Situation,
+} from '../../shared/types';
 import { api } from '../api';
 import Icon from '../components/Icon.vue';
 import StatusPill from '../components/StatusPill.vue';
@@ -10,6 +16,29 @@ const props = defineProps<{ id: string }>();
 const message = ref<MessageRow>();
 const events = ref<EventRow[]>([]);
 const error = ref('');
+const situation = computed(() => parseJson<Situation>(message.value?.situation));
+const ctx = computed(() => parseJson<MessageContext>(message.value?.context));
+const mapUrl = computed(() => {
+  const g = ctx.value?.gps ?? ctx.value?.ipLocation;
+  return g?.lat !== undefined && g.lon !== undefined ? `https://maps.google.com/?q=${g.lat},${g.lon}` : '';
+});
+const ipPlace = computed(() =>
+  [ctx.value?.ipLocation?.city, ctx.value?.ipLocation?.region, ctx.value?.ipLocation?.country]
+    .filter(Boolean)
+    .join(', '),
+);
+const deviceText = computed(() => {
+  const d = ctx.value?.device;
+  if (!d) return '';
+  return [
+    d.network && (d.network === 'wifi' ? 'Wi-Fi' : d.network === 'cellular' ? 'Mobile data' : d.network),
+    d.battery !== undefined && `battery ${d.battery}%${d.charging ? ' (charging)' : ''}`,
+    d.platform,
+    d.timezone,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+});
 
 async function load() {
   try {
@@ -56,9 +85,28 @@ onUnmounted(() => clearInterval(timer));
         </div>
         <h1 v-if="message.subject" class="mt-4 text-xl font-semibold">{{ message.subject }}</h1>
         <p class="mt-3 text-lg leading-relaxed whitespace-pre-wrap">{{ message.body || '(empty)' }}</p>
+        <div v-if="situation" class="mt-4 rounded-2xl bg-sky-50 px-4 py-3">
+          <p class="text-sm font-semibold text-sky-700">What's happening</p>
+          <p class="mt-1 text-lg leading-snug">{{ situation.now }}</p>
+          <p v-if="situation.likely" class="mt-1">
+            <span class="font-semibold">Most likely:</span> {{ situation.likely }}
+          </p>
+          <p class="mt-1 text-sm text-muted">
+            From the last {{ situation.basedOn }} message{{ situation.basedOn === 1 ? '' : 's' }} ·
+            {{ situation.confidence }} confidence · read out on the call
+          </p>
+        </div>
         <p v-if="message.insight" class="mt-4 rounded-2xl bg-lav-50 px-4 py-3 text-lav-600">
           <span class="font-semibold">AI note:</span> {{ message.insight }}
         </p>
+        <div v-if="ctx?.details?.length" class="mt-4">
+          <p class="text-sm font-semibold text-muted">Added after sending</p>
+          <ul class="mt-1 space-y-1">
+            <li v-for="d in ctx.details" :key="d.at" class="leading-snug">
+              “{{ d.text }}” <span class="text-sm text-faint">{{ fullTime(d.at) }}</span>
+            </li>
+          </ul>
+        </div>
         <dl class="mt-5 grid gap-x-6 gap-y-2 border-t border-line pt-4 text-sm sm:grid-cols-2">
           <div>
             <dt class="text-muted">From</dt>
@@ -67,6 +115,41 @@ onUnmounted(() => clearInterval(timer));
           <div>
             <dt class="text-muted">Why this level</dt>
             <dd>{{ message.reason }}</dd>
+          </div>
+          <div v-if="ctx?.gps || ipPlace" class="sm:col-span-2">
+            <dt class="text-muted">Where</dt>
+            <dd>
+              <template v-if="ctx?.gps">
+                {{ ctx.place || `${ctx.gps.lat}, ${ctx.gps.lon}` }}
+                <span class="text-muted">(GPS ±{{ ctx.gps.accuracy }} m)</span>
+              </template>
+              <template v-else>
+                Around {{ ipPlace }} <span class="text-muted">(from the internet connection, not exact)</span>
+              </template>
+              <a
+                v-if="mapUrl"
+                :href="mapUrl"
+                target="_blank"
+                rel="noopener"
+                class="ml-1 text-sage-700 underline"
+                >Open map</a
+              >
+            </dd>
+          </div>
+          <div v-if="ctx?.nearby?.length" class="sm:col-span-2">
+            <dt class="text-muted">Nearby</dt>
+            <dd>{{ ctx.nearby.join(' · ') }}</dd>
+          </div>
+          <div v-if="ctx?.ip">
+            <dt class="text-muted">Connection</dt>
+            <dd class="break-all">
+              {{ ctx.ip }}<template v-if="ctx.hostname"> · {{ ctx.hostname }}</template>
+              <span v-if="ctx.isp" class="block text-muted">{{ ctx.isp }}</span>
+            </dd>
+          </div>
+          <div v-if="deviceText">
+            <dt class="text-muted">Phone</dt>
+            <dd>{{ deviceText }}</dd>
           </div>
           <div v-if="message.acknowledged_by">
             <dt class="text-muted">Confirmed by</dt>

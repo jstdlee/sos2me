@@ -10,6 +10,7 @@ import {
   type Config,
   type HealthReport,
   type Level,
+  type Situation,
   type StatusInfo,
 } from '../../shared/types';
 import { api } from '../api';
@@ -116,7 +117,14 @@ async function testCall(id: string) {
 // ── Detection ──
 const tryText = ref('');
 const tryFrom = ref('');
-const tryResult = ref<{ level: Level; reason: string; insight: string; aiErrors: string[] }>();
+const tryResult = ref<{
+  level: Level;
+  reason: string;
+  insight: string;
+  aiErrors: string[];
+  prediction?: Situation | null;
+  routine?: string[];
+}>();
 const trying = ref(false);
 async function tryClassify() {
   if (needSave()) return;
@@ -452,7 +460,52 @@ const policyDesc: Record<Level, string> = {
               hint="e.g. “Assistant's note: Alex sounds scared and wants you to come now.”"
             />
           </div>
+          <div class="py-3">
+            <Toggle
+              v-model="cfg.voice.readSituation"
+              label="Read what's happening and where"
+              hint="The AI prediction from recent messages, e.g. “Here is what seems to be happening: Alex is at the bus stop and feels followed. Most likely: he wants you to pick him up now.” Replaces the note above when available."
+            />
+          </div>
         </div>
+      </section>
+      <section class="card space-y-4">
+        <Toggle
+          v-model="cfg.situation.enabled"
+          label="What's happening — AI prediction (text only)"
+          hint="After each message, the AI predicts the most likely scenario from everything received (messages, time, location, nearby places, battery, details the child added). Two short lines of text, no images: what is happening now, and what most likely comes next. Needs AI."
+        />
+        <template v-if="cfg.situation.enabled">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="label" for="sitHours">Look back (hours)</label>
+              <input
+                id="sitHours"
+                v-model.number="cfg.situation.windowHours"
+                type="number"
+                min="1"
+                max="72"
+                class="field"
+              />
+            </div>
+            <div>
+              <label class="label" for="sitMax">At most (messages)</label>
+              <input
+                id="sitMax"
+                v-model.number="cfg.situation.maxMessages"
+                type="number"
+                min="1"
+                max="20"
+                class="field"
+              />
+            </div>
+          </div>
+          <Toggle
+            v-model="cfg.situation.email"
+            label="Email the prediction to parents after every message"
+            hint="Also for everyday messages. Urgent and check-in alert emails always include it."
+          />
+        </template>
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
             <label class="label">Language</label>
@@ -636,6 +689,20 @@ const policyDesc: Record<Level, string> = {
             <strong>{{ levelText[tryResult.level] }}</strong> — {{ tryResult.reason }}
           </p>
           <p v-if="tryResult.insight" class="mt-1 italic">“{{ tryResult.insight }}”</p>
+          <div v-if="tryResult.prediction" class="mt-2 rounded-xl bg-white/70 px-3 py-2">
+            <p><strong>Prediction:</strong> {{ tryResult.prediction.now }}</p>
+            <p v-if="tryResult.prediction.likely">
+              <strong>Most likely:</strong> {{ tryResult.prediction.likely }}
+            </p>
+            <p class="text-sm text-muted">
+              With the last {{ tryResult.prediction.basedOn - 1 }} real message(s)<template
+                v-if="tryResult.routine?.length"
+              >
+                and {{ tryResult.routine.length }} routine pattern(s)</template
+              >
+              · {{ tryResult.prediction.confidence }} confidence
+            </p>
+          </div>
           <p v-for="e in tryResult.aiErrors" :key="e" class="mt-1 text-sm text-muted">AI error: {{ e }}</p>
         </div>
       </section>
@@ -739,6 +806,11 @@ const policyDesc: Record<Level, string> = {
             <label class="label">Quick replies</label>
             <TagInput v-model="cfg.channels.kidPage.quickReplies" placeholder="Add a button…" />
           </div>
+          <Toggle
+            v-model="cfg.channels.kidPage.shareLocation"
+            label="Send location and phone info"
+            hint="With every message: GPS (if your child allows it), street and nearby landmarks, IP address, internet provider, Wi-Fi or mobile data, battery. Web pages can't read the Wi-Fi name or the phone's name."
+          />
         </template>
       </section>
 
@@ -764,6 +836,14 @@ const policyDesc: Record<Level, string> = {
         <p v-if="cfg.channels.acceptMentions && !cfg.channels.watchNames.length" class="hint !mt-0">
           Empty = your child's name ({{ cfg.childName }}).
         </p>
+      </section>
+
+      <section class="card">
+        <Toggle
+          v-model="cfg.channels.askForDetails"
+          label="Reply to your child's urgent emails"
+          hint="Straight away, only for urgent and check-in emails: a safety reminder (call 999 / 995), then asks where they are, what they can see and hear, and who is with them. Subject “Delete me after reading”. Sent from AgentMail."
+        />
       </section>
 
       <section class="card">
