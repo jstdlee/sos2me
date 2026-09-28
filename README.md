@@ -3,13 +3,18 @@
 **Your child's messages, as a phone call.**
 
 <p align="center">
-  <a href="docs/media/sos2me-intro.mp4"><img src="docs/media/intro-poster.webp" alt="Watch the 45-second SOS2me introduction" width="720"></a><br>
-  <sub><b>45-second introduction</b> (with sound): why SOS2me exists, a typical emergency, and how a message becomes a call</sub>
+  <a href="docs/media/sos2me-intro.mp4"><img src="docs/media/intro-preview.webp" alt="SOS2me introduction: a child taps HELP, clues are sent, the AI pieces together what's happening, Mum is called and presses 1" width="720"></a><br>
+  <b><a href="docs/media/sos2me-intro.mp4">▶ Watch the 45-second introduction with sound</a></b><br>
+  <sub>Why SOS2me exists, a typical emergency, and how a message becomes a call</sub>
 </p>
 
 Kids often have a phone that can send messages but can't always call, or can't talk. SOS2me
 turns their message into a **phone call to a parent that reads the message aloud**. For
 anything urgent, it keeps calling Mum, then Dad, then Mum again, until someone **presses 1**.
+
+It also helps you understand what's going on: each message carries **clues about where your child is**,
+the kid page and email replies **ask them for more details**, and the AI reads their **recent messages and
+usual routine** to tell you what is most likely happening right now.
 
 It runs on Cloudflare's free tier. The only paid part is Twilio, which charges a few cents per call.
 
@@ -17,10 +22,13 @@ It runs on Cloudflare's free tier. The only paid part is Twilio, which charges a
  Child                               SOS2me (Cloudflare Worker)                         Parents
  ─────                               ──────────────────────────                         ───────
  Kid page (PIN, SOS, quick replies) ─┐
+   + location, network, device clues │
  Mailboxes (AgentMail / Gmail IMAP) ─┼─► urgent words ─► AI (emotion & risk) ─► urgent ─► call until "press 1" + SMS + email
  ntfy topics · Email Routing        ─┘                                        ├► check in ─► call + SMS + email
                                                                               └► everyday ─► one call reading the message
-                              daily system check ─► email / SMS parents if anything is broken
+ recent messages + usual routine + clues ─► AI "what's happening" ─► read out on the call, emailed to parents
+ "Help them find you" tips · replies to urgent emails ─► the child adds what they see and hear
+ daily system check ─► email / SMS parents if anything is broken
 ```
 
 ## Gallery
@@ -64,11 +72,6 @@ It runs on Cloudflare's free tier. The only paid part is Twilio, which charges a
   - One-tap replies (e.g. "SOS", "Pick me up") and free text. The dashboard lives at `/admin`.
   - Shows "Mum heard you ✓" once a parent confirms.
   - Can be triggered from an iPhone Shortcut, Siri or Back Tap ([docs/ios.md](docs/ios.md)).
-  - Sends where the child is with every message: GPS (if they allow it) with the street and nearby
-    landmarks from OpenStreetMap, plus IP address, hostname, internet provider, Wi-Fi or mobile data, and
-    battery. Web pages can't read the Wi-Fi name or the phone's name.
-  - After sending, "Help them find you" tips let the child add what they see, hear, the room, or who is
-    with them. These are added to the same alert (no extra calls). A detail with urgent words starts a new alert.
 - **Mailboxes, checked every minute:** as many as you like. AgentMail inboxes, plus Gmail, Outlook
   or iCloud over IMAP with an app password. Mail from senders not on the allowed list is ignored.
 - **Emails that mention your child:** mail from anyone else, such as a teacher or another parent, is read by the
@@ -87,24 +90,41 @@ It runs on Cloudflare's free tier. The only paid part is Twilio, which charges a
   - It adds a one-line note for you, e.g. "Alex feels threatened by a follower".
   - Models are tried in order: Cloudflare Llama 3.3 70B, then SEA-LION (Singlish and Chinese), then free OpenRouter models.
   - In testing, the prompt classified all 16 test messages correctly on both Cloudflare models ([docs/review.md](docs/review.md)).
-- **What's happening (prediction):** after each message the AI predicts the most likely scenario from
-  everything received about the event: recent messages, local time, where the phone is, nearby places,
-  battery, network and details the child added. It's two short lines of text (no images): what is most
-  likely happening now, and what most likely comes next. The call reads it out with the child's location,
-  alert emails include it, and it's emailed to you after every message (you can turn this off).
-- **Reply to urgent emails:** when the child's email is urgent or a check-in, SOS2me replies straight
-  away with the subject "Delete me after reading". The reply starts with a safety reminder (call 999 / 995),
-  then asks where they are, what they can see and hear, and who is with them.
 - **Voicemail can't stop an alarm:** urgent calls only stop when someone presses 1.
 - **Declined call:** SOS2me rings the same person again immediately (on iPhone, a second call within
   3 minutes rings through Do Not Disturb). **No answer:** it moves to the next emergency contact.
+
+**Understanding what's happening**
+
+- **One tap sends clues:** every kid page message carries where the child is:
+  - GPS (if they allow it), with the street and nearby landmarks from OpenStreetMap
+  - IP address, its hostname and internet provider, and the approximate city
+  - Wi-Fi or mobile data, battery, device and browser, time zone
+
+  Web pages can't read the Wi-Fi network name or the phone's name.
+
+- **"Help them find you":** after sending, the kid page shows tips so the child can add what they see
+  (a building, park or sign), what they hear, what the room looks like, or who is with them. Details join
+  the same alert without extra calls; a detail with urgent words starts a new alert.
+- **Reply to urgent emails:** when the child's email is urgent or a check-in, SOS2me replies straight
+  away with the subject "Delete me after reading". It starts with a safety reminder (call 999 / 995),
+  then asks the same questions.
+- **What's happening (AI prediction):** after each message the AI looks at everything received: the
+  recent messages (default: last 6 hours, up to 8), local time, where the phone is, nearby places,
+  battery, network, the child's added details, and their **usual routine** from the last 30 days. It
+  writes two short lines: what is most likely happening now, and what comes next, e.g. "Alex is at the
+  library, not home at the usual time, and thinks someone is following him." It points out what's
+  unusual and doesn't alarm you about what's normal for your child.
+  - The call reads it out together with the child's location.
+  - Alert emails include it, with a map link, and it's emailed to you after every message (can be turned off).
 
 **Settings and monitoring**
 
 - **Everything is configurable on the settings page:**
   - family, call order and rounds per level
   - urgent words and the AI model chain
-  - voice
+  - the "what's happening" prediction: on/off, how far back to look, emailing it after every message
+  - voice, and what the call reads out (the message, the AI note, the prediction and location)
   - every channel
   - Twilio, AgentMail and AI keys (write-only, shown as dots)
   - dashboard password and kid PIN
@@ -233,6 +253,10 @@ Settings → Connections → Public address.
 - **After it's applied,** everything lives in your private Cloudflare D1 database:
   - Passwords and PINs are stored hashed.
   - API keys are never sent back to the browser, which only shows `••••••••`.
+- **Location and device clues** are stored with each message in your own D1 database. To name the street
+  and nearby places, the GPS position is sent to OpenStreetMap (Nominatim and Overpass); the IP's
+  hostname is looked up via Cloudflare DNS. Messages and clues are also sent to the AI models in
+  your model chain (Workers AI first; SEA-LION and OpenRouter only if you configure them).
 - **Environment secrets** (`wrangler secret put TWILIO_AUTH_TOKEN`, …) still work as a fallback if you prefer them.
 
 ## Stack

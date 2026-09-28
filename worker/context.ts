@@ -2,7 +2,7 @@
 // connection. Everything here is best-effort — a failed lookup never delays or blocks an alert.
 import type { MessageContext } from '../shared/types';
 
-const UA = 'SOS2me/2 (self-hosted family safety app; https://github.com/sos2me)';
+const UA = 'SOS2me/2 (self-hosted family safety app; https://github.com/jstdlee/sos2me)';
 const str = (v: unknown, max = 80) => (typeof v === 'string' ? v.trim().slice(0, max) : undefined);
 const num = (v: unknown, lo: number, hi: number) =>
   typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : undefined;
