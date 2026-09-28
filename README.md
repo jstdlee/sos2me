@@ -3,8 +3,8 @@
 **Your child's messages, as a phone call.**
 
 <p align="center">
-  <a href="docs/media/sos2me-intro.mp4"><img src="docs/media/intro-preview.webp" alt="SOS2me introduction: a child taps HELP, clues are sent, the AI pieces together what's happening, Mum is called and presses 1" width="720"></a><br>
-  <b><a href="docs/media/sos2me-intro.mp4">▶ Watch the 45-second introduction with sound</a></b><br>
+  <a href="https://www.youtube.com/watch?v=6ILbX7fhgSg"><img src="docs/media/intro-preview.webp" alt="SOS2me introduction: a child taps HELP, clues are sent, the AI pieces together what's happening, Mum is called and presses 1" width="720"></a><br>
+  <b><a href="https://www.youtube.com/watch?v=6ILbX7fhgSg">▶ Watch the 45-second introduction on YouTube</a></b> · <a href="docs/media/sos2me-intro.mp4">or the video file</a><br>
   <sub>Why SOS2me exists, a typical emergency, and how a message becomes a call</sub>
 </p>
 
