@@ -102,6 +102,7 @@ async function chatOpenAiStyle(
   model: string,
   messages: ChatMessage[],
   timeoutMs: number,
+  extra: Record<string, unknown> = {},
 ) {
   const res = await fetch(url, {
     method: 'POST',
@@ -111,13 +112,18 @@ async function chatOpenAiStyle(
       'HTTP-Referer': 'https://github.com/sos2me',
       'X-Title': 'SOS2me',
     },
-    body: JSON.stringify({ model, messages, temperature: 0, max_tokens: 400 }),
+    body: JSON.stringify({ model, messages, temperature: 0, max_tokens: 400, ...extra }),
     signal: AbortSignal.timeout(timeoutMs),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = (data as { error?: { message?: string } | string }).error;
     throw new Error(`HTTP ${res.status}: ${typeof err === 'string' ? err : (err?.message ?? 'error')}`);
+  }
+  const choice = (data as { choices?: { finish_reason?: string; message?: { content?: unknown } }[] })
+    .choices?.[0];
+  if (!choice?.message?.content && choice?.finish_reason === 'length') {
+    throw new Error('reply cut off before any answer (token limit)');
   }
   return extractContent(data);
 }
@@ -161,6 +167,9 @@ export async function chat(env: Env, cfg: Config, m: AiModel, messages: ChatMess
         m.model,
         messages,
         timeoutMs,
+        // openrouter/free often routes to reasoning models, which can spend the whole
+        // budget thinking and return no content. Keep reasoning short and allow room.
+        { max_tokens: 1500, reasoning: { effort: 'low', exclude: true } },
       );
     case 'openai': {
       if (!s.openaiBaseUrl || !s.openaiApiKey) throw new Error('OpenAI-compatible URL/key not set');

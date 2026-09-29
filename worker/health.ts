@@ -30,18 +30,29 @@ export async function runHealthCheck(
   opts: { notify: boolean },
 ): Promise<HealthReport> {
   const checks: Promise<CheckResult>[] = [];
+  let ai: Promise<CheckResult[]> = Promise.resolve([]);
 
   // AI models — each one separately, so a dead fallback is noticed before it's needed.
+  // One working model is enough to classify, so if any answers, the others only warn
+  // (free models are often briefly rate-limited).
   if (cfg.ai.enabled) {
-    for (const m of cfg.ai.models.filter((x) => x.enabled)) {
-      checks.push(
-        check(`AI · ${m.model}`, async () => {
-          const t = Date.now();
-          const v = await askModel(env, cfg, m, SAMPLE);
-          return `answered "${v.level}" in ${((Date.now() - t) / 1000).toFixed(1)}s`;
-        }),
-      );
-    }
+    ai = Promise.all(
+      cfg.ai.models
+        .filter((x) => x.enabled)
+        .map((m) =>
+          check(`AI · ${m.model}`, async () => {
+            const t = Date.now();
+            const v = await askModel(env, cfg, m, SAMPLE);
+            return `answered "${v.level}" in ${((Date.now() - t) / 1000).toFixed(1)}s`;
+          }),
+        ),
+    ).then((rs) =>
+      rs.some((r) => r.ok)
+        ? rs.map((r) =>
+            r.ok ? r : { ...r, ok: true, warn: true, detail: `${r.detail} (another AI model works)` },
+          )
+        : rs,
+    );
   }
 
   const tw = twilioCreds(env, cfg);
@@ -105,7 +116,7 @@ export async function runHealthCheck(
     }),
   );
 
-  const results = await Promise.all(checks);
+  const results = [...(await ai), ...(await Promise.all(checks))];
   const ok = results.every((r) => r.ok);
   const report: HealthReport = { ranAt: nowIso(), ok, checks: results, emailed: [] };
 

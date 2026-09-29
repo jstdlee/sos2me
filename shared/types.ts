@@ -440,7 +440,11 @@ export const DEFAULT_CONFIG: Config = {
         model: '@cf/aisingapore/gemma-sea-lion-v4-27b-it',
         enabled: true,
       },
-      { id: 'or-free', provider: 'openrouter', model: 'openrouter/free', enabled: true },
+      // Free OpenRouter models tested for reliable JSON. Free tiers get rate-limited at
+      // random, so keep several — the system check passes if any AI model answers.
+      { id: 'or-cohere', provider: 'openrouter', model: 'cohere/north-mini-code:free', enabled: true },
+      { id: 'or-ling', provider: 'openrouter', model: 'inclusionai/ling-3.0-flash-sante:free', enabled: true },
+      { id: 'or-laguna', provider: 'openrouter', model: 'poolside/laguna-xs-2.1:free', enabled: true },
     ],
   },
   voice: { language: 'en-US', voice: '', readMessage: true, readAiSummary: true, readSituation: true },

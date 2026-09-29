@@ -62,7 +62,9 @@
     "models": [
       { "provider": "workers-ai", "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast", "enabled": true },
       { "provider": "workers-ai", "model": "@cf/aisingapore/gemma-sea-lion-v4-27b-it", "enabled": true },
-      { "provider": "openrouter", "model": "openrouter/free", "enabled": true }
+      { "provider": "openrouter", "model": "cohere/north-mini-code:free", "enabled": true },
+      { "provider": "openrouter", "model": "inclusionai/ling-3.0-flash-sante:free", "enabled": true },
+      { "provider": "openrouter", "model": "poolside/laguna-xs-2.1:free", "enabled": true }
     ]
   },
 
