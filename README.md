@@ -3,10 +3,10 @@
 **Your child's messages, as a phone call.**
 
 <p align="center">
-  <a href="docs/media/sos2me-promo.mp4"><img src="docs/media/promo-preview.webp" alt="SOS2me in paper collage: Alex the bunny taps HELP, clues fly off on a paper plane, Mum declines, Dad answers and presses 1" width="720"></a><br>
-  <b><a href="docs/media/sos2me-promo.mp4">▶ Watch the 60-second story, with sound</a></b><br>
+  <a href="https://youtu.be/wnu2n2wnPbg"><img src="https://img.youtube.com/vi/wnu2n2wnPbg/maxresdefault.jpg" alt="Watch the SOS2me story on YouTube: Alex the paper bunny taps HELP, clues fly off on a paper plane, Mum declines, Dad answers and presses 1" width="720"></a><br>
+  <b><a href="https://youtu.be/wnu2n2wnPbg">▶ Watch the 60-second story on YouTube</a></b> · <a href="docs/media/sos2me-promo.mp4">or the video file</a><br>
   <sub>A paper-collage short: why SOS2me exists, a typical emergency, and how one tap becomes a phone call that keeps ringing until someone presses 1.
-  Also: <a href="https://www.youtube.com/watch?v=6ILbX7fhgSg">the earlier 45-second intro on YouTube</a>.</sub>
+  Also: <a href="https://www.youtube.com/watch?v=6ILbX7fhgSg">the earlier 45-second intro</a>.</sub>
 </p>
 
 Kids often have a phone that can send messages but can't always call, or can't talk. SOS2me
